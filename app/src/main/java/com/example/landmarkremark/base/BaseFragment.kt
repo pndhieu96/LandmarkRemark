@@ -47,8 +47,9 @@ abstract class BaseFragment<T: ViewBinding>
         super.onViewCreated(view, savedInstanceState)
 
         initObserve()
-
-        initialize()
+        if(isInitView.getAndSet(true).not()) {
+            initialize()
+        }
 
         val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {

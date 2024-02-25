@@ -4,6 +4,7 @@ import com.example.landmarkremark.base.NetworkResult
 import com.example.landmarkremark.data.models.Note
 import com.example.landmarkremark.data.service.FirebaseService
 import com.example.landmarkremark.di.IoDispatcher
+import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -70,6 +71,17 @@ class FirebaseRepository @Inject constructor(
 
     suspend fun deleteNote(note: Note) = withContext(dispatcher) {
         when(val result = firebaseService.deleteNote(note)) {
+            is NetworkResult.Success -> {
+                result
+            }
+            is NetworkResult.Error -> {
+                throw result.exception
+            }
+        }
+    }
+
+    suspend fun getNotesByCoordinate(latLng: LatLng) = withContext(dispatcher) {
+        when(val result = firebaseService.getNotesByCoordinate(latLng)) {
             is NetworkResult.Success -> {
                 result
             }

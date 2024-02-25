@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.view.View
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.landmarkremark.R
 import com.example.landmarkremark.base.BaseFragment
@@ -59,11 +60,13 @@ class SplashFragment
 
         val handler = Handler()
         handler.postDelayed(Runnable {
-            val currentUser = auth.currentUser
-            if (currentUser != null) {
-                findNavController().navigate(R.id.action_splashFragment_to_mapFragment)
-            } else {
-                findNavController().navigate(R.id.action_splashFragment_to_loginFragment)
+            lifecycleScope.launchWhenResumed {
+                val currentUser = auth.currentUser
+                if (currentUser != null) {
+                    navController.navigate(R.id.action_splashFragment_to_mapFragment)
+                } else {
+                    navController.navigate(R.id.action_splashFragment_to_loginFragment)
+                }
             }
         }, 200)
     }

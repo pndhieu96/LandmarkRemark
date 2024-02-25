@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
+import androidx.fragment.app.setFragmentResult
 import androidx.fragment.app.viewModels
 import com.example.landmarkremark.R
 import com.example.landmarkremark.base.BaseFragment
@@ -36,14 +38,12 @@ class NoteFragment : BaseFragment<FragmentNoteBinding>(FragmentNoteBinding::infl
     // State of fragment
     private var fragmentState = FragmentState.ADDING
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-    }
-
     override fun initObserve() {
         viewModel.saveNoteSuccess.observe(viewLifecycleOwner) {
-            if(it) {
+            if(!it.hasBeenHandled) {
                 Toast.makeText(context, "Save the note successfully", Toast.LENGTH_LONG).show()
+                val noteJson = Gson().toJson(it.getContentIfNotHandled())
+                setFragmentResult(REQUEST_KEY_NOTE_BACK_TO_MAP, bundleOf("note" to noteJson))
                 navController.popBackStack()
             }
         }
@@ -178,5 +178,7 @@ class NoteFragment : BaseFragment<FragmentNoteBinding>(FragmentNoteBinding::infl
     companion object {
         @JvmStatic
         fun newInstance() = NoteFragment()
+
+        val REQUEST_KEY_NOTE_BACK_TO_MAP = "1200"
     }
 }

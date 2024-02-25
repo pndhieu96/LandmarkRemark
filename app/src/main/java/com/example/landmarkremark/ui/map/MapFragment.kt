@@ -1,58 +1,56 @@
 package com.example.landmarkremark.ui.map
 
-import android.Manifest
 import android.annotation.SuppressLint
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.widget.Toast
-import androidx.core.app.ActivityCompat
 import androidx.core.os.bundleOf
-import androidx.fragment.app.Fragment
+import androidx.fragment.app.setFragmentResultListener
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.landmarkremark.R
 import com.example.landmarkremark.adapter.NoteAdapter
 import com.example.landmarkremark.base.BaseFragment
+import com.example.landmarkremark.base.Util.Companion.hideKeyboard
 import com.example.landmarkremark.base.Util.Companion.isLocationPermissionAccess
 import com.example.landmarkremark.base.Util.Companion.restartApplication
 import com.example.landmarkremark.data.models.Note
 import com.example.landmarkremark.data.models.User
 import com.example.landmarkremark.databinding.FragmentMapBinding
-import com.example.landmarkremark.ui.login.LoginVm
+import com.example.landmarkremark.ui.note.NoteFragment.Companion.REQUEST_KEY_NOTE_BACK_TO_MAP
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapsInitializer
 import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
-import com.google.firebase.Firebase
-import com.google.firebase.app
-import com.google.firebase.auth.auth
-import com.google.firebase.auth.ktx.auth
 import com.google.gson.Gson
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MapFragment :
-    BaseFragment<FragmentMapBinding>(FragmentMapBinding::inflate){
-    private var mMap: GoogleMap? = null
+    BaseFragment<FragmentMapBinding>(FragmentMapBinding::inflate) {
     private val viewModel by viewModels<MapVm>()
+
+    // Variable to track the state of Google Map
+    private var mMap: GoogleMap? = null
+    // Variable to interact with the Fused Location Provider service
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+
+    // Check if google map is available for use
+    private var isGoogleMapAvailable : Boolean = false
+
+    // Adapter to map the list of notes to RecyclerView
     private lateinit var adapter: NoteAdapter
 
+    // Value of current location of user
     private var myLocation : LatLng? = null
+    // Sign in value of user
     private var user: User? = null
-    private var isGoogleMapAvailable : Boolean = false
 
     override fun initObserve() {
         viewModel.user.observe(viewLifecycleOwner) {
@@ -67,12 +65,13 @@ class MapFragment :
         }
 
         viewModel.notes.observe(viewLifecycleOwner) {
-            if(it.isNotEmpty()) {
-                adapter.noteList = it
+            if(!it.hasBeenHandled) {
+                val note = it.getContentIfNotHandled() ?: mutableListOf()
+                adapter.noteList = note
                 adapter.notifyDataSetChanged()
 
                 if(isGoogleMapAvailable) {
-                    addNotesToMap(it)
+                    addNotesToMap(note)
                 }
             }
         }
@@ -103,6 +102,11 @@ class MapFragment :
 
         // Init Click event of Views
         initClickViewEvent()
+
+        // Listen the result when back from NoteFragment
+        setFragmentResultListener(REQUEST_KEY_NOTE_BACK_TO_MAP) { _, bundle ->
+            viewModel.getNotes()
+        }
     }
 
     private fun initGoogleMap() {
@@ -120,10 +124,7 @@ class MapFragment :
     private fun initNoteRecycleView() {
         adapter = NoteAdapter(mutableListOf())
         adapter.onItemClick = { note ->
-            if(isGoogleMapAvailable) {
-                val location = LatLng(note.latitude, note.longitude)
-                mMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 15f))
-            }
+            setMarkerForCurrentNote(note)
         }
         adapter.onItemDetailClick = { note ->
             if (user != null) {
@@ -137,7 +138,6 @@ class MapFragment :
         }
         binding.rcNotes.adapter = adapter
         binding.rcNotes.layoutManager = LinearLayoutManager(context)
-        viewModel.getNotes()
     }
 
     private fun initClickViewEvent() {
@@ -145,17 +145,50 @@ class MapFragment :
             viewModel.logout()
         }
         binding.ivAdd.setOnClickListener{
-            val bundle = bundleOf(
-                "myLocation" to Gson().toJson(myLocation),
-                "user" to Gson().toJson(user)
-            )
-            navController.navigate(R.id.action_mapFragment_to_noteFragment, bundle)
+            getCurrentLocation {
+                val bundle = bundleOf(
+                    "myLocation" to Gson().toJson(myLocation),
+                    "user" to Gson().toJson(user)
+                )
+                navController.navigate(R.id.action_mapFragment_to_noteFragment, bundle)
+            }
         }
+        binding.ivReload.setOnClickListener {
+            mMap?.clear()
+            viewModel.getNotes()
+            binding.edtSearch.setText("")
+            getCurrentLocation {
+            }
+        }
+        binding.btnSearch.setOnClickListener {
+            searchNotes()
+        }
+    }
+
+    /**
+     * Search note by email and content from text of EditText
+     */
+    private fun searchNotes() {
+        mMap?.clear()
+        val query = binding.edtSearch.text.toString()
+        if(query.isNotEmpty()) {
+            viewModel.getNotesByEmailOrContent(query)
+        } else {
+            viewModel.getNotes()
+        }
+        hideKeyboard(binding.edtSearch)
     }
 
     @SuppressLint("MissingPermission")
     private var mapCallBack = OnMapReadyCallback { googleMap ->
+        isGoogleMapAvailable = true
         mMap = googleMap
+
+        mMap?.setOnMarkerClickListener {
+            viewModel.getNotesByCoordinator(it.position)
+            mMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(it.position, 15f))
+            return@setOnMarkerClickListener false
+        }
 
         //get current location
         if (isLocationPermissionAccess(requireContext())
@@ -163,16 +196,30 @@ class MapFragment :
             mMap?.uiSettings?.isMyLocationButtonEnabled = true
             mMap?.isMyLocationEnabled = true
         }
-        getCurrentLocation()
+
+        getCurrentLocation{}
+
+        viewModel.getNotes()
+    }
+
+    /**
+     * Set marker for the selection of a note from the RecyclerView
+     * */
+    private fun setMarkerForCurrentNote(note: Note) {
+        if(isGoogleMapAvailable) {
+            val location = LatLng(note.latitude, note.longitude)
+            mMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 15f))
+            mMap?.clear()
+            setCustomMarker(note, R.drawable.ic_current_location)
+        }
     }
 
     /**
      * get current location of user
      * */
     @SuppressLint("MissingPermission")
-    private fun getCurrentLocation() {
-        if (isLocationPermissionAccess(requireContext())
-        ) {
+    private fun getCurrentLocation(callbackSuccess: ((LatLng) -> Unit)) {
+        if (isLocationPermissionAccess(requireContext()) && isGoogleMapAvailable) {
             fusedLocationClient.lastLocation
                 .addOnSuccessListener { location ->
                     if (location != null) {
@@ -182,7 +229,7 @@ class MapFragment :
                         myLocation = LatLng(latitude, longitude)
                         myLocation?.let {
                             mMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(it, 15f))
-                            isGoogleMapAvailable = true
+                            callbackSuccess.invoke(it)
                         }
                     }
                 }
@@ -193,11 +240,11 @@ class MapFragment :
     }
 
     /**
-     * Set marker of note on the google map
+     * Add a custom marker for the note on the google map
      * */
-    private fun setCustomMarker(note: Note) : Marker? {
+    private fun setCustomMarker(note: Note, resourceId: Int) : Marker? {
         val latLng = LatLng(note.latitude, note.longitude)
-        val markerIcon : BitmapDescriptor = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker)
+        val markerIcon : BitmapDescriptor = BitmapDescriptorFactory.fromResource(resourceId)
         val markerOptions : MarkerOptions = MarkerOptions().position(latLng)
             .title(note.userEmail)
             .icon(markerIcon)
@@ -205,9 +252,12 @@ class MapFragment :
         return marker
     }
 
+    /**
+     * Add markers for the list of notes on the Google Map.
+     */
     private fun addNotesToMap(notes: List<Note>) {
         for(note in notes) {
-            setCustomMarker(note)
+            setCustomMarker(note, R.drawable.ic_marker)
         }
     }
 

@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.landmarkremark.base.BaseViewModel
+import com.example.landmarkremark.base.Event
 import com.example.landmarkremark.base.NetworkResult
 import com.example.landmarkremark.data.models.Note
 import com.example.landmarkremark.data.models.User
@@ -20,8 +21,8 @@ class NoteVm @Inject constructor(
     val user : LiveData<User>
         get() = _user
 
-    private var _saveNoteSuccess = MutableLiveData<Boolean>()
-    val saveNoteSuccess : LiveData<Boolean>
+    private var _saveNoteSuccess = MutableLiveData<Event<Note>>()
+    val saveNoteSuccess : LiveData<Event<Note>>
         get() = _saveNoteSuccess
 
     fun getUser() {
@@ -39,7 +40,7 @@ class NoteVm @Inject constructor(
         showLoading(true)
         parentJob = viewModelScope.launch(handler) {
             val result = firebaseRepository.createNote(note)
-            _saveNoteSuccess.postValue(result.data)
+            _saveNoteSuccess.postValue(Event(note))
         }
         registerJobFinish()
     }
@@ -48,7 +49,7 @@ class NoteVm @Inject constructor(
         showLoading(true)
         parentJob = viewModelScope.launch(handler) {
             val result = firebaseRepository.editNote(note)
-            _saveNoteSuccess.postValue(result.data)
+            _saveNoteSuccess.postValue(Event(note))
         }
         registerJobFinish()
     }
@@ -57,7 +58,7 @@ class NoteVm @Inject constructor(
         showLoading(true)
         parentJob = viewModelScope.launch(handler) {
             val result = firebaseRepository.deleteNote(note)
-            _saveNoteSuccess.postValue(result.data)
+            _saveNoteSuccess.postValue(Event(Note()))
         }
         registerJobFinish()
     }

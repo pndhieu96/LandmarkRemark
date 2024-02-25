@@ -12,12 +12,10 @@
         tools:layout="@layout/fragment_splash" >
         <action
             android:id="@+id/action_splashFragment_to_loginFragment"
-            app:destination="@id/loginFragment"
-            app:popUpToInclusive="false" />
+            app:destination="@id/loginFragment"/>
         <action
             android:id="@+id/action_splashFragment_to_mapFragment"
-            app:destination="@id/mapFragment"
-            app:popUpToInclusive="false" />
+            app:destination="@id/mapFragment"/>
     </fragment>
     <fragment
         android:id="@+id/loginFragment"
@@ -26,8 +24,7 @@
         tools:layout="@layout/fragment_login" >
         <action
             android:id="@+id/action_loginFragment_to_mapFragment"
-            app:destination="@id/mapFragment"
-            app:popUpToInclusive="false" />
+            app:destination="@id/mapFragment"/>
     </fragment>
     <fragment
         android:id="@+id/mapFragment"

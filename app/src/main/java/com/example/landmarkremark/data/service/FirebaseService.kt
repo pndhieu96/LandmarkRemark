@@ -4,9 +4,12 @@ import android.util.Log
 import com.example.landmarkremark.base.NetworkResult
 import com.example.landmarkremark.data.models.Note
 import com.example.landmarkremark.data.models.User
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.QuerySnapshot
 import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -77,6 +80,36 @@ class FirebaseService @Inject constructor() {
     suspend fun getNotes(): NetworkResult<List<Note>>
             = suspendCoroutine{ continuation ->
         firestore.collection("Notes").orderBy("timestamp", Query.Direction.DESCENDING)
+            .get()
+            .addOnSuccessListener { result ->
+                val notes = mutableListOf<Note>()
+                for (document in result) {
+                    val noteId = document.id
+                    val userId = document.getString("userId") ?: ""
+                    val userEmail = document.getString("userEmail") ?: ""
+                    val latitude = document.getDouble("latitude") ?: 0.0
+                    val longitude = document.getDouble("longitude") ?: 0.0
+                    val content = document.getString("content") ?: ""
+                    val timestamp = document.getLong("timestamp") ?: 0
+                    val note = Note(noteId, userId, userEmail, latitude, longitude, content, timestamp)
+                    notes.add(note)
+                }
+                continuation.resume(NetworkResult.Success(notes))
+            }
+            .addOnFailureListener{
+                val exception = Exception(it?.message ?: "Failed to fetch data from Firebase")
+                continuation.resume(NetworkResult.Error(exception))
+            }
+    }
+
+    /**
+     * Get notes by coordinates
+     */
+    suspend fun getNotesByCoordinate(latLng: LatLng): NetworkResult<List<Note>>
+            = suspendCoroutine{ continuation ->
+        firestore.collection("Notes")
+            .whereEqualTo("latitude", latLng.latitude)
+            .whereEqualTo("longitude", latLng.longitude)
             .get()
             .addOnSuccessListener { result ->
                 val notes = mutableListOf<Note>()
