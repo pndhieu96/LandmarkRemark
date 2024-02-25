@@ -8,6 +8,7 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         tools:context=".ui.login.LoginFragment"
+        android:background="@color/white"
         android:padding="16dp">
 
         <ImageView
