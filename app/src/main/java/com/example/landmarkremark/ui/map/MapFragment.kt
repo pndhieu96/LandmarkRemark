@@ -30,7 +30,10 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapsInitializer
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptor
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.firebase.Firebase
 import com.google.firebase.app
@@ -67,6 +70,10 @@ class MapFragment :
             if(it.isNotEmpty()) {
                 adapter.noteList = it
                 adapter.notifyDataSetChanged()
+
+                if(isGoogleMapAvailable) {
+                    addNotesToMap(it)
+                }
             }
         }
 
@@ -182,6 +189,25 @@ class MapFragment :
                 .addOnFailureListener { exception ->
                     Toast.makeText(context, exception.message, Toast.LENGTH_LONG).show()
                 }
+        }
+    }
+
+    /**
+     * Set marker of note on the google map
+     * */
+    private fun setCustomMarker(note: Note) : Marker? {
+        val latLng = LatLng(note.latitude, note.longitude)
+        val markerIcon : BitmapDescriptor = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker)
+        val markerOptions : MarkerOptions = MarkerOptions().position(latLng)
+            .title(note.userEmail)
+            .icon(markerIcon)
+        val marker = mMap?.addMarker(markerOptions)
+        return marker
+    }
+
+    private fun addNotesToMap(notes: List<Note>) {
+        for(note in notes) {
+            setCustomMarker(note)
         }
     }
 

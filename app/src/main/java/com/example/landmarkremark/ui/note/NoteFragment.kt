@@ -3,7 +3,9 @@ package com.example.landmarkremark.ui.note
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.viewModels
+import com.example.landmarkremark.R
 import com.example.landmarkremark.base.BaseFragment
 import com.example.landmarkremark.base.Util.Companion.enableViewClickEvent
 import com.example.landmarkremark.base.Util.Companion.timestampToDate
@@ -116,6 +118,7 @@ class NoteFragment : BaseFragment<FragmentNoteBinding>(FragmentNoteBinding::infl
             binding.ivCheck.visibility = View.GONE
             binding.ivDelete.visibility = View.GONE
             enableViewClickEvent(false, binding.edtText)
+            binding.edtText.setTextColor(ContextCompat.getColor(requireContext(), R.color.black));
         }
     }
 
