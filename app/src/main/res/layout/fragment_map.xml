@@ -34,14 +34,6 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"/>
             <ImageView
-                android:id="@+id/iv_filter"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:padding="10dp"
-                android:layout_marginHorizontal="5dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_filter"/>
-            <ImageView
                 android:id="@+id/iv_logout"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
