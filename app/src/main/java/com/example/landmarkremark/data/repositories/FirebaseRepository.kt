@@ -35,8 +35,8 @@ class FirebaseRepository @Inject constructor(
         firebaseService.getUser()
     }
 
-    suspend fun saveNote(note: Note) = withContext(dispatcher) {
-        when(val result = firebaseService.saveNote(note)) {
+    suspend fun getNotes() = withContext(dispatcher) {
+        when(val result = firebaseService.getNotes()) {
             is NetworkResult.Success -> {
                 result
             }
@@ -46,8 +46,30 @@ class FirebaseRepository @Inject constructor(
         }
     }
 
-    suspend fun getNotes() = withContext(dispatcher) {
-        when(val result = firebaseService.getNotes()) {
+    suspend fun createNote(note: Note) = withContext(dispatcher) {
+        when(val result = firebaseService.createNote(note)) {
+            is NetworkResult.Success -> {
+                result
+            }
+            is NetworkResult.Error -> {
+                throw result.exception
+            }
+        }
+    }
+
+    suspend fun editNote(note: Note) = withContext(dispatcher) {
+        when(val result = firebaseService.editNote(note)) {
+            is NetworkResult.Success -> {
+                result
+            }
+            is NetworkResult.Error -> {
+                throw result.exception
+            }
+        }
+    }
+
+    suspend fun deleteNote(note: Note) = withContext(dispatcher) {
+        when(val result = firebaseService.deleteNote(note)) {
             is NetworkResult.Success -> {
                 result
             }

@@ -86,6 +86,8 @@ class MapFragment :
     }
 
     override fun initialize() {
+        viewModel.getUser()
+
         // Init google map
         initGoogleMap()
 
@@ -117,12 +119,14 @@ class MapFragment :
             }
         }
         adapter.onItemDetailClick = { note ->
-            val bundle = bundleOf(
-                "myLocation" to Gson().toJson(myLocation),
-                "user" to Gson().toJson(user),
-                "selectedNote" to Gson().toJson(note),
-            )
-            navController.navigate(R.id.action_mapFragment_to_noteFragment, bundle)
+            if (user != null) {
+                val bundle = bundleOf(
+                    "myLocation" to Gson().toJson(myLocation),
+                    "user" to Gson().toJson(user),
+                    "selectedNote" to Gson().toJson(note),
+                )
+                navController.navigate(R.id.action_mapFragment_to_noteFragment, bundle)
+            }
         }
         binding.rcNotes.adapter = adapter
         binding.rcNotes.layoutManager = LinearLayoutManager(context)
@@ -134,7 +138,10 @@ class MapFragment :
             viewModel.logout()
         }
         binding.ivAdd.setOnClickListener{
-            val bundle = bundleOf("myLocation" to Gson().toJson(myLocation))
+            val bundle = bundleOf(
+                "myLocation" to Gson().toJson(myLocation),
+                "user" to Gson().toJson(user)
+            )
             navController.navigate(R.id.action_mapFragment_to_noteFragment, bundle)
         }
     }

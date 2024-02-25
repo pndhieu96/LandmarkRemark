@@ -17,6 +17,12 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class NoteFragment : BaseFragment<FragmentNoteBinding>(FragmentNoteBinding::inflate) {
+
+    enum class FragmentState {
+        ADDING,
+        EDITING
+    }
+
     private val viewModel by viewModels<NoteVm>()
 
     // Sign in value of user
@@ -25,6 +31,8 @@ class NoteFragment : BaseFragment<FragmentNoteBinding>(FragmentNoteBinding::infl
     private var location : LatLng? = null
     // Value of selected note
     private var selectedNote: Note? = null
+    // State of fragment
+    private var fragmentState = FragmentState.ADDING
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -80,7 +88,7 @@ class NoteFragment : BaseFragment<FragmentNoteBinding>(FragmentNoteBinding::infl
             selectedNote = Gson().fromJson(selectedNoteJson, Note::class.java)
         }
         val userJson = arguments?.getString("user")
-        if(!selectedNoteJson.isNullOrEmpty()) {
+        if(!userJson.isNullOrEmpty()) {
             user = Gson().fromJson(userJson, User::class.java)
         }
     }
@@ -99,6 +107,8 @@ class NoteFragment : BaseFragment<FragmentNoteBinding>(FragmentNoteBinding::infl
     }
 
     private fun initEditState() {
+        fragmentState = FragmentState.EDITING
+
         initNote()
 
         if(!checkUserEditPermission()) {
@@ -110,8 +120,11 @@ class NoteFragment : BaseFragment<FragmentNoteBinding>(FragmentNoteBinding::infl
     }
 
     private fun initAddSate() {
+        fragmentState = FragmentState.ADDING
+
         binding.ivDelete.visibility = View.GONE
         binding.tvTime.text = timestampToDate(System.currentTimeMillis())
+        binding.tvUser.text = user?.email
     }
 
     private fun initClickViewEvent() {
@@ -122,7 +135,13 @@ class NoteFragment : BaseFragment<FragmentNoteBinding>(FragmentNoteBinding::infl
             saveNote()
         }
         binding.ivDelete.setOnClickListener {
+            deleteNote()
+        }
+    }
 
+    private fun deleteNote() {
+        selectedNote?.let {
+            viewModel.deleteNote(it)
         }
     }
 
@@ -133,10 +152,11 @@ class NoteFragment : BaseFragment<FragmentNoteBinding>(FragmentNoteBinding::infl
 
     private fun saveNote() {
         val text = binding.edtText.text.toString()
-        if(text.isNullOrEmpty() || user == null) {
+        if (text.isNullOrEmpty() || user == null) {
             Toast.makeText(context, "You must enter content", Toast.LENGTH_LONG).show()
         } else {
             val note = Note(
+                noteId = selectedNote?.noteId ?: "",
                 userId = user!!.uid,
                 userEmail = user!!.email,
                 latitude = location?.latitude ?: 0.0,
@@ -144,10 +164,13 @@ class NoteFragment : BaseFragment<FragmentNoteBinding>(FragmentNoteBinding::infl
                 content = text,
                 timestamp = System.currentTimeMillis()
             )
-            viewModel.saveNote(note)
+            if(fragmentState == FragmentState.ADDING) {
+                viewModel.createNote(note)
+            } else if(fragmentState == FragmentState.EDITING) {
+                viewModel.editNote(note)
+            }
         }
     }
-
 
     companion object {
         @JvmStatic

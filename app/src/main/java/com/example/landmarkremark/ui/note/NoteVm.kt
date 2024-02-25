@@ -14,7 +14,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class NoteVm @Inject constructor(
-    private val authenticationFirebaseRepository: FirebaseRepository
+    private val firebaseRepository: FirebaseRepository
 ) : BaseViewModel() {
     private var _user = MutableLiveData<User>()
     val user : LiveData<User>
@@ -27,7 +27,7 @@ class NoteVm @Inject constructor(
     fun getUser() {
         showLoading(true)
         parentJob = viewModelScope.launch(handler) {
-            val result = authenticationFirebaseRepository.getUser()
+            val result = firebaseRepository.getUser()
             if(result is NetworkResult.Success) {
              _user.postValue(result.data)
             }
@@ -35,13 +35,30 @@ class NoteVm @Inject constructor(
         registerJobFinish()
     }
 
-    fun saveNote(note: Note) {
+    fun createNote(note: Note) {
         showLoading(true)
         parentJob = viewModelScope.launch(handler) {
-            val result = authenticationFirebaseRepository.saveNote(note)
+            val result = firebaseRepository.createNote(note)
             _saveNoteSuccess.postValue(result.data)
         }
         registerJobFinish()
     }
 
+    fun editNote(note: Note) {
+        showLoading(true)
+        parentJob = viewModelScope.launch(handler) {
+            val result = firebaseRepository.editNote(note)
+            _saveNoteSuccess.postValue(result.data)
+        }
+        registerJobFinish()
+    }
+
+    fun deleteNote(note: Note) {
+        showLoading(true)
+        parentJob = viewModelScope.launch(handler) {
+            val result = firebaseRepository.deleteNote(note)
+            _saveNoteSuccess.postValue(result.data)
+        }
+        registerJobFinish()
+    }
 }

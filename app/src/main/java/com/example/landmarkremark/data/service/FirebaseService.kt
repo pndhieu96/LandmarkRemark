@@ -57,9 +57,9 @@ class FirebaseService @Inject constructor() {
     }
 
     /**
-     * Save a note
+     * Create a new note
      */
-    suspend fun saveNote(note: Note): NetworkResult<Boolean>
+    suspend fun createNote(note: Note): NetworkResult<Boolean>
     = suspendCoroutine{ continuation ->
         firestore.collection("Notes")
             .add(note)
@@ -96,6 +96,38 @@ class FirebaseService @Inject constructor() {
             .addOnFailureListener{
                 val exception = Exception(it?.message ?: "Failed to fetch data from Firebase")
                 continuation.resume(NetworkResult.Error(exception))
+            }
+    }
+
+    /**
+     * Edit information of a created note
+     */
+    suspend fun editNote(note: Note): NetworkResult<Boolean>
+            = suspendCoroutine{ continuation ->
+        firestore.collection("Notes")
+            .document(note.noteId)
+            .set(note)
+            .addOnSuccessListener {
+                continuation.resume(NetworkResult.Success(true))
+            }
+            .addOnFailureListener{
+                continuation.resume(NetworkResult.Success(false))
+            }
+    }
+
+    /**
+     * Delete a create note
+     */
+    suspend fun deleteNote(note: Note): NetworkResult<Boolean>
+            = suspendCoroutine{ continuation ->
+        firestore.collection("Notes")
+            .document(note.noteId)
+            .delete()
+            .addOnSuccessListener {
+                continuation.resume(NetworkResult.Success(true))
+            }
+            .addOnFailureListener{
+                continuation.resume(NetworkResult.Success(false))
             }
     }
 }
