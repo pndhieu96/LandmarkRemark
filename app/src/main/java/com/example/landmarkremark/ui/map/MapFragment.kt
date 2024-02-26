@@ -105,6 +105,7 @@ class MapFragment :
 
         // Listen the result when back from NoteFragment
         setFragmentResultListener(REQUEST_KEY_NOTE_BACK_TO_MAP) { _, bundle ->
+            mMap?.clear()
             viewModel.getNotes()
         }
     }
