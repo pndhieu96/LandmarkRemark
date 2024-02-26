@@ -52,7 +52,8 @@ Below, I will present the technology I used as well as the detailed features of 
 - <b>The Note fragment</b> is responsible for displaying the details of a note created by oneself and others, including the user's email, creation date, and content. Additionally, users can create new notes at the current location, edit, and delete notes created by themselves.
 <img width="541" alt="Screenshot 2024-02-26 at 02 19 13" src="https://github.com/pndhieu96/LandmarkRemark/assets/24983645/df507b79-5291-43b0-a72c-fd4f9b122f78">
 
-- Link application demo video:
+- Link application demo video: https://drive.google.com/drive/folders/1RKn3phLVbt5CTQb1VzshK_CNdkcdQ3JV
+- Link apk file: https://drive.google.com/drive/folders/1mMZPZ03GN9vWj37AqX5Hi1ffSZV3RUbJ
 
 ## Conclusion
 - I completed the assignment within a total time of approximately 24 hours, including:
